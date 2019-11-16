@@ -30,9 +30,9 @@ const plugin = {
         }
 
         /* get gallery info */
-        const dom = await axios.get(url)
-          .then(({ data }) => new JSDOM(data));
-        const imageUrls = [...dom.window.document.querySelectorAll('.entry-content noscript > img')].map((i) => i.src);
+        const dom = await axios.get(url).then(({ data }) => new JSDOM(data));
+        const imageUrls = [...dom.window.document.querySelectorAll('.entry-content noscript')]
+          .map((i) => i.textContent.match(/(https?:\/\/[^"]+)"/)[1]);
         const pad = imageUrls.length.toString(10).length;
 
         /* write files */
