@@ -1,0 +1,156 @@
+# This file was generated based on ".graphqlconfig". Do not edit manually.
+
+schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+}
+
+type BatchSubscription {
+    error: String
+    finished: Boolean!
+    message: String
+}
+
+type Book {
+    id: ID!
+    info: BookInfo
+    number: String!
+    pages: Int!
+    thumbnail: String
+}
+
+type BookInfo {
+    books(order: BookOrder = ASC): [Book!]!
+    count: Int!
+    finished: Boolean!
+    history: Boolean!
+    id: ID!
+    invisible: Boolean!
+    name: String!
+    thumbnail: String
+}
+
+type BookInfoList {
+    infos: [BookInfo!]!
+    length: Int!
+}
+
+type BookInfoResult {
+    books: [Book!]!
+    code: String
+    message: String
+    success: Boolean!
+}
+
+type CommonPluginQuery {
+    args: [String!]!
+    name: String
+}
+
+type Debug_FolderSizes {
+    book: BigInt!
+    cache: BigInt!
+    tmp: BigInt!
+    unusedBook: BigInt!
+}
+
+type Mutation {
+    addBook(file: Upload!, id: ID!, number: String!): Result!
+    addBookInfo(finished: Boolean = false, name: String!, thumbnail: Upload): ResultWithInfoId!
+    addBookInfoHistories(histories: [BookInfoHistory!]!): Result!
+    addBooks(books: [InputBook!]!, id: ID!): [Result!]!
+    addCompressBook(file: Upload!, id: ID!): ResultWithBookResults!
+    addCompressBookBatch(file: Upload!, id: ID!): ID!
+    debug_deleteUnusedFolders: Result!
+    deleteBook(id: ID!): Result!
+    deleteBookInfo(id: ID!): BookInfoResult!
+    deletePages(id: ID!, numbers: [Int!]!): Result!
+    editBook(id: ID!, number: String, thumbnail: String): Result!
+    editBookInfo(finished: Boolean, id: ID!, invisible: Boolean, name: String, thumbnail: String): Result!
+    splitPages(id: ID!, start: Int!, type: SplitType = VERTICAL): Result!
+}
+
+type Plugin {
+    info: PluginInfo
+    queries: PluginQueries
+}
+
+type PluginInfo {
+    name: String
+    version: String
+}
+
+type PluginQueries {
+    add: CommonPluginQuery
+}
+
+type Query {
+    book(id: ID!): Book
+    bookInfo(id: ID!): BookInfo
+    bookInfos(history: Boolean = false, invisible: Boolean = false, limit: Int = 10, normal: Boolean = true, offset: Int = 0, order: BookInfoOrder = Update_Newest, search: String): BookInfoList!
+    books(id: ID, limit: Int = 10, offset: Int = 0, order: BookOrder = ASC): [Book!]!
+    debug_folderSize: Debug_FolderSizes!
+    plugins: [Plugin!]!
+}
+
+type Result {
+    code: String
+    message: String
+    success: Boolean!
+}
+
+type ResultWithBookResults {
+    bookResults: [Result!]
+    code: String
+    message: String
+    success: Boolean!
+}
+
+type ResultWithInfoId {
+    code: String
+    infoId: ID
+    message: String
+    success: Boolean!
+}
+
+type Subscription {
+    addBookInfo(name: String!): String!
+    addBooks(id: ID!): String!
+    addCompressBookBatch(id: ID!): BatchSubscription!
+}
+
+enum BookInfoOrder {
+    Add_Newest
+    Add_Oldest
+    Name_Asc
+    Name_Desc
+    Update_Newest
+    Update_Oldest
+}
+
+enum BookOrder {
+    ASC
+    DESC
+}
+
+enum SplitType {
+    HORIZONTAL
+    VERTICAL
+}
+
+input BookInfoHistory {
+    count: Int!
+    name: String!
+}
+
+input InputBook {
+    file: Upload!
+    number: String!
+}
+
+
+"BigInt scalar type can represent values more Int."
+scalar BigInt
+
+scalar Upload

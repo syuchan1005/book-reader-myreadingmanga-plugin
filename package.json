@@ -1,0 +1,32 @@
+{
+  "name": "book-reader-myreadingmanga-plugin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "syuchan1005<syuchan.dev@gmail.com>",
+  "license": "MIT",
+  "bookReader": {
+    "name": "MyReadingManga",
+    "queries": {
+      "add": {
+        "name": "addMyReadingManga",
+        "args": [
+          "id",
+          "number",
+          "url"
+        ]
+      }
+    }
+  },
+  "dependencies": {
+    "axios": "^0.19.0",
+    "graphql-tag": "^2.10.1",
+    "jsdom": "^15.2.1",
+    "uuid": "^3.3.3"
+  },
+  "devDependencies": {}
+}
