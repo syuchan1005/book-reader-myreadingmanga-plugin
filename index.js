@@ -18,7 +18,8 @@ const plugin = {
       sequelize,
     }, {
       gm,
-    }) => ({
+      pubsub,
+    }, keys) => ({
       addMyReadingManga: async (parent, { id, number, url }) => {
         /* BookInfo check */
         const bookInfo = await BookInfoModel.findOne({
@@ -32,6 +33,10 @@ const plugin = {
         }
 
         /* get gallery info */
+        await pubsub.publish(keys.ADD_BOOKS, {
+          id,
+          addBooks: 'Download Image Info',
+        });
         const dom = await axios.get(url).then(({ data }) => new JSDOM(data));
         const imageUrls = [...dom.window.document.querySelectorAll('.entry-content noscript')]
           .map((i) => i.textContent.match(/(https?:\/\/[^"]+)"/)[1]);
@@ -43,9 +48,17 @@ const plugin = {
         await fs.mkdir(tempDir);
         await util.asyncForEach(imageUrls, async (url, i) => {
           const filePath = `${tempDir}/${i.toString().padStart(pad, '0')}.jpg`;
+          await pubsub.publish(keys.ADD_BOOKS, {
+            id,
+            addBooks: `Download Image ${i.toString().padStart(pad, '0')}`,
+          });
           const imageBuf = await axios.get(url, {
             responseType: 'arraybuffer',
           }).then(({ data }) => Buffer.from(data, 'binary'));
+          await pubsub.publish(keys.ADD_BOOKS, {
+            id,
+            addBooks: `Write Image ${i.toString().padStart(pad, '0')}`,
+          });
           if (/\.jpe?g$/.test(url)) {
             await fs.writeFile(filePath, imageBuf);
           } else {
@@ -58,6 +71,10 @@ const plugin = {
         });
 
         /* write database */
+        await pubsub.publish(keys.ADD_BOOKS, {
+          id,
+          addBooks: 'Write Database',
+        });
         const bThumbnail = `/book/${bookId}/${'0'.padStart(pad, '0')}.jpg`;
         await sequelize.transaction(async (transaction) => {
           await BookModel.create({
