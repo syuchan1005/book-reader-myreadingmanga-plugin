@@ -8,18 +8,20 @@ const uuidv4 = require('uuid/v4');
 const util = require('./util');
 
 const plugin = {
-  db: undefined,
   typeDefs: gql`type Mutation {
       addMyReadingManga(id: ID! number: String! url: String!): Result!
   }`,
-  init(db) {
-    plugin.db = db;
-  },
   middleware: {
-    Mutation: () => ({
+    Mutation: ({
+      BookModel,
+      BookInfoModel,
+      sequelize,
+    }, {
+      gm,
+    }) => ({
       addMyReadingManga: async (parent, { id, number, url }) => {
         /* BookInfo check */
-        const bookInfo = await plugin.db.BookInfoModel.findOne({
+        const bookInfo = await BookInfoModel.findOne({
           where: { id },
         });
         if (!bookInfo) {
@@ -48,7 +50,7 @@ const plugin = {
             await fs.writeFile(filePath, imageBuf);
           } else {
             await (new Promise((resolve) => {
-              this.gm(imageBuf)
+              gm(imageBuf)
                 .quality(85)
                 .write(filePath, resolve);
             }));
@@ -57,8 +59,8 @@ const plugin = {
 
         /* write database */
         const bThumbnail = `/book/${bookId}/${'0'.padStart(pad, '0')}.jpg`;
-        await plugin.db.sequelize.transaction(async (transaction) => {
-          await plugin.db.BookModel.create({
+        await sequelize.transaction(async (transaction) => {
+          await BookModel.create({
             id: bookId,
             thumbnail: bThumbnail,
             number,
@@ -67,16 +69,16 @@ const plugin = {
           }, {
             transaction,
           });
-          await plugin.db.BookInfoModel.update({
+          await BookInfoModel.update({
             // @ts-ignore
-            count: plugin.db.sequelize.literal('count + 1'),
+            count: sequelize.literal('count + 1'),
           }, {
             where: {
               id,
             },
             transaction,
           });
-          await plugin.db.BookInfoModel.update({
+          await BookInfoModel.update({
             history: false,
             count: 1,
           }, {
@@ -86,7 +88,7 @@ const plugin = {
             },
             transaction,
           });
-          await plugin.db.BookInfoModel.update({
+          await BookInfoModel.update({
             thumbnail: bThumbnail,
           }, {
             where: {
