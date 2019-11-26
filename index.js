@@ -41,7 +41,7 @@ const plugin = {
         const pagination = [dom];
         const paginationDom = dom.window.document.querySelectorAll('.entry-pagination.pagination > a');
         if (paginationDom) {
-          const pageUrls = [...paginationDom.children]
+          const pageUrls = [...paginationDom]
             .filter((elem) => /\d+/.test(elem.textContent))
             .map((elem) => elem.href);
           for (let pageUrl of pageUrls) {
