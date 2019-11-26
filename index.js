@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 
 const gql = require('graphql-tag');
 const axios = require('axios').default;
-const { JSDOM } = require('jsdom');
+const {JSDOM} = require('jsdom');
 const uuidv4 = require('uuid/v4');
 
 const util = require('./util');
@@ -13,17 +13,17 @@ const plugin = {
   }`,
   middleware: {
     Mutation: ({
-      BookModel,
-      BookInfoModel,
-      sequelize,
-    }, {
-      gm,
-      pubsub,
-    }, keys) => ({
-      addMyReadingManga: async (parent, { id, number, url }) => {
+                 BookModel,
+                 BookInfoModel,
+                 sequelize,
+               }, {
+                 gm,
+                 pubsub,
+               }, keys) => ({
+      addMyReadingManga: async (parent, {id, number, url}) => {
         /* BookInfo check */
         const bookInfo = await BookInfoModel.findOne({
-          where: { id },
+          where: {id},
         });
         if (!bookInfo) {
           return {
@@ -37,9 +37,24 @@ const plugin = {
           id,
           addBooks: 'Download Image Info',
         });
-        const dom = await axios.get(url).then(({ data }) => new JSDOM(data));
-        const imageUrls = [...dom.window.document.querySelectorAll('.entry-content noscript')]
-          .map((i) => i.textContent.match(/(https?:\/\/[^"]+)"/)[1]);
+        const dom = await axios.get(url).then(({data}) => new JSDOM(data));
+        const pagination = [dom];
+        const paginationDom = dom.window.document.querySelectorAll('.entry-pagination.pagination');
+        if (paginationDom) {
+          const pageUrls = [...paginationDom.children]
+            .filter((elem) => elem.tagName === 'A' && /\d+/.test(elem.textContent))
+            .map((elem) => elem.href);
+          for (let pageUrl of pageUrls) {
+            await axios.get(pageUrl)
+              .then(({data}) => {
+                pagination.push(new JSDOM(data));
+              });
+          }
+        }
+        const imageUrls = pagination
+          .map((d) => [...d.window.document.querySelectorAll('.entry-content noscript')]
+            .map((i) => i.textContent.match(/(https?:\/\/[^"]+)"/)[1]))
+          .flat();
         const pad = imageUrls.length.toString(10).length;
 
         /* write files */
@@ -54,7 +69,7 @@ const plugin = {
           });
           const imageBuf = await axios.get(url, {
             responseType: 'arraybuffer',
-          }).then(({ data }) => Buffer.from(data, 'binary'));
+          }).then(({data}) => Buffer.from(data, 'binary'));
           await pubsub.publish(keys.ADD_BOOKS, {
             id,
             addBooks: `Write Image ${i.toString().padStart(pad, '0')}`,
@@ -116,7 +131,7 @@ const plugin = {
           });
         });
 
-        return { success: true };
+        return {success: true};
       },
     }),
   },
