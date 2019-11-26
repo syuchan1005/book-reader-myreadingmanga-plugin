@@ -39,10 +39,10 @@ const plugin = {
         });
         const dom = await axios.get(url).then(({data}) => new JSDOM(data));
         const pagination = [dom];
-        const paginationDom = dom.window.document.querySelectorAll('.entry-pagination.pagination');
+        const paginationDom = dom.window.document.querySelectorAll('.entry-pagination.pagination > a');
         if (paginationDom) {
           const pageUrls = [...paginationDom.children]
-            .filter((elem) => elem.tagName === 'A' && /\d+/.test(elem.textContent))
+            .filter((elem) => /\d+/.test(elem.textContent))
             .map((elem) => elem.href);
           for (let pageUrl of pageUrls) {
             await axios.get(pageUrl)
