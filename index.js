@@ -2,6 +2,7 @@ const fs = require('fs').promises;
 
 const gql = require('graphql-tag');
 const axios = require('axios').default;
+const cloudscraper = require('cloudscraper');
 const {JSDOM} = require('jsdom');
 const uuidv4 = require('uuid/v4');
 
@@ -37,7 +38,7 @@ const plugin = {
           id,
           addBooks: 'Download Image Info',
         });
-        const dom = await axios.get(url).then(({data}) => new JSDOM(data));
+        const dom = await cloudscraper.get(url).then((data) => new JSDOM(data));
         const pagination = [dom];
         const paginationDom = dom.window.document.querySelectorAll('.entry-pagination.pagination > a');
         if (paginationDom) {
@@ -45,8 +46,8 @@ const plugin = {
             .filter((elem) => /\d+/.test(elem.textContent))
             .map((elem) => elem.href);
           for (let pageUrl of pageUrls) {
-            await axios.get(pageUrl)
-              .then(({data}) => {
+            await cloudscraper.get(pageUrl)
+              .then((data) => {
                 pagination.push(new JSDOM(data));
               });
           }
