@@ -3,28 +3,30 @@ const fs = require('fs').promises;
 const gql = require('graphql-tag');
 const axios = require('axios').default;
 const cloudscraper = require('cloudscraper');
-const {JSDOM} = require('jsdom');
-const uuidv4 = require('uuid/v4');
+const { JSDOM } = require('jsdom');
+const uuidv4 = require('uuid').v4;
+const rimraf = require('rimraf');
 
 const util = require('./util');
 
+// noinspection JSUnusedGlobalSymbols
 const plugin = {
   typeDefs: gql`type Mutation {
       addMyReadingManga(id: ID! number: String! url: String!): Result!
   }`,
   middleware: {
     Mutation: ({
-                 BookModel,
-                 BookInfoModel,
-                 sequelize,
-               }, {
-                 gm,
-                 pubsub,
-               }, keys) => ({
-      addMyReadingManga: async (parent, {id, number, url}) => {
+      BookModel,
+      BookInfoModel,
+      sequelize,
+    }, {
+      gm,
+      pubsub,
+    }, keys) => ({
+      addMyReadingManga: async (parent, { id, number, url }) => {
         /* BookInfo check */
         const bookInfo = await BookInfoModel.findOne({
-          where: {id},
+          where: { id },
         });
         if (!bookInfo) {
           return {
@@ -45,8 +47,9 @@ const plugin = {
           const pageUrls = [...paginationDom]
             .filter((elem) => /\d+/.test(elem.textContent))
             .map((elem) => elem.href);
-          for (let pageUrl of pageUrls) {
-            await cloudscraper.get(pageUrl)
+          for (let i = 0; i < pageUrls.length; i += 1) {
+            // eslint-disable-next-line no-await-in-loop
+            await cloudscraper.get(pageUrls[i])
               .then((data) => {
                 pagination.push(new JSDOM(data));
               });
@@ -61,21 +64,29 @@ const plugin = {
         /* write files */
         const bookId = uuidv4();
         const tempDir = `storage/book/${bookId}`;
+        const catchFunc = (err) => new Promise((resolve, reject) => {
+          rimraf(tempDir, () => {
+            reject(err);
+          });
+        });
         await fs.mkdir(tempDir);
-        await util.asyncForEach(imageUrls, async (url, i) => {
+        const totalStr = imageUrls.length.toString().padStart(pad, '0');
+        await util.asyncForEach(imageUrls, async (imageUrl, i) => {
           const filePath = `${tempDir}/${i.toString().padStart(pad, '0')}.jpg`;
           await pubsub.publish(keys.ADD_BOOKS, {
             id,
-            addBooks: `Download Image ${i.toString().padStart(pad, '0')}`,
+            addBooks: `Download Image ${i.toString().padStart(pad, '0')}/${totalStr}`,
           });
-          const imageBuf = await axios.get(url, {
+          const imageBuf = await axios.get(imageUrl, {
             responseType: 'arraybuffer',
-          }).then(({data}) => Buffer.from(data, 'binary'));
+          }).then(({ data }) => Buffer.from(data, 'binary'));
+          /*
           await pubsub.publish(keys.ADD_BOOKS, {
             id,
             addBooks: `Write Image ${i.toString().padStart(pad, '0')}`,
           });
-          if (/\.jpe?g$/.test(url)) {
+          */
+          if (/\.jpe?g$/.test(imageUrl)) {
             await fs.writeFile(filePath, imageBuf);
           } else {
             await (new Promise((resolve) => {
@@ -84,7 +95,7 @@ const plugin = {
                 .write(filePath, resolve);
             }));
           }
-        });
+        }).catch(catchFunc);
 
         /* write database */
         await pubsub.publish(keys.ADD_BOOKS, {
@@ -130,9 +141,9 @@ const plugin = {
             },
             transaction,
           });
-        });
+        }).catch(catchFunc);
 
-        return {success: true};
+        return { success: true };
       },
     }),
   },
