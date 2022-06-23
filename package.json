@@ -27,7 +27,7 @@
     "axios": "^0.21.0",
     "cloudscraper": "^4.6.0",
     "graphql-tag": "^2.11.0",
-    "jsdom": "^16.4.0",
+    "jsdom": "^16.5.0",
     "request": "^2.88.2",
     "rimraf": "^3.0.2",
     "uuid": "^8.3.1"
